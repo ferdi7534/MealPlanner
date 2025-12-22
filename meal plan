@@ -1,0 +1,57 @@
+{
+  "name": "MealPlan",
+  "type": "object",
+  "properties": {
+    "week_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "meals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string"
+          },
+          "petit_dejeuner": {
+            "type": "string"
+          },
+          "dejeuner": {
+            "type": "string"
+          },
+          "diner": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "shopping_list": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "estimated_price": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total_estimated_price": {
+      "type": "number"
+    },
+    "preferences_snapshot": {
+      "type": "object"
+    }
+  },
+  "required": []
+}
