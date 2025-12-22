@@ -1,0 +1,402 @@
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChefHat, Sparkles, ArrowRight, ArrowLeft, Users, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+
+import StepIndicator from "../components/ui/StepIndicator";
+import AllergiesSelector from "../components/preferences/AllergiesSelector";
+import DietSelector from "../components/preferences/DietSelector";
+import MealsSelector from "../components/preferences/MealsSelector";
+import BudgetSelector from "../components/preferences/BudgetSelector";
+import MealCard from "../components/meal-plan/MealCard";
+import ShoppingList from "../components/meal-plan/ShoppingList";
+
+const STEPS = ["Régime", "Allergies", "Repas", "Budget", "Résultat"];
+const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+export default function Home() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [mealPlan, setMealPlan] = useState(null);
+  
+  const [preferences, setPreferences] = useState({
+    diet_type: "standard",
+    custom_diet: "",
+    allergies: [],
+    meals_to_plan: ["dejeuner", "diner"],
+    budget_level: 50,
+    people_count: 2
+  });
+
+  const updatePreference = (key, value) => {
+    setPreferences(prev => ({ ...prev, [key]: value }));
+  };
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 0: return preferences.diet_type && (preferences.diet_type !== "autre" || preferences.custom_diet);
+      case 2: return preferences.meals_to_plan.length > 0;
+      case 3: return preferences.budget_level > 0;
+      default: return true;
+    }
+  };
+
+  const generateMealPlan = async () => {
+    setIsGenerating(true);
+    
+    const dietDescription = preferences.diet_type === "autre" 
+      ? preferences.custom_diet 
+      : preferences.diet_type;
+    
+    const mealsText = preferences.meals_to_plan.map(m => {
+      if (m === "petit_dejeuner") return "petit-déjeuner";
+      return m;
+    }).join(", ");
+
+    const totalBudget = preferences.budget_level * preferences.people_count;
+
+    const prompt = `Tu es un nutritionniste expert. Génère un plan de repas pour une semaine complète (7 jours).
+
+CONTRAINTES:
+- Régime alimentaire: ${dietDescription}
+- Allergies/intolérances à éviter absolument: ${preferences.allergies.length > 0 ? preferences.allergies.join(", ") : "aucune"}
+- Repas à planifier: ${mealsText}
+- Budget total pour la semaine: ${totalBudget}€ (${preferences.budget_level}€ par personne)
+- Nombre de personnes: ${preferences.people_count}
+
+GÉNÈRE:
+1. Les repas pour chaque jour de la semaine (Lundi à Dimanche) avec pour chaque repas:
+   - Le nom du plat
+   - Le nombre de calories pour 100g
+   - L'indice glycémique (IG)
+2. Une liste de courses complète avec les quantités et prix estimés
+3. Le prix total estimé
+
+Les repas doivent être variés, équilibrés et réalistes.`;
+
+    const response = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          meals: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                day: { type: "string" },
+                petit_dejeuner: { 
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    calories_per_100g: { type: "number" },
+                    glycemic_index: { type: "number" }
+                  }
+                },
+                dejeuner: { 
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    calories_per_100g: { type: "number" },
+                    glycemic_index: { type: "number" }
+                  }
+                },
+                diner: { 
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    calories_per_100g: { type: "number" },
+                    glycemic_index: { type: "number" }
+                  }
+                }
+              }
+            }
+          },
+          shopping_list: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                item: { type: "string" },
+                quantity: { type: "string" },
+                category: { type: "string" },
+                estimated_price: { type: "number" }
+              }
+            }
+          },
+          total_estimated_price: { type: "number" }
+        }
+      }
+    });
+
+    setMealPlan(response);
+    setIsGenerating(false);
+    setCurrentStep(4);
+
+    // Save to database
+    await base44.entities.MealPlan.create({
+      week_start: new Date().toISOString().split('T')[0],
+      meals: response.meals,
+      shopping_list: response.shopping_list,
+      total_estimated_price: response.total_estimated_price,
+      preferences_snapshot: preferences
+    });
+
+    await base44.entities.UserPreferences.create(preferences);
+  };
+
+  const handleNext = () => {
+    if (currentStep === 3) {
+      generateMealPlan();
+    } else {
+      setCurrentStep(prev => Math.min(prev + 1, 4));
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 0));
+  };
+
+  const resetPlan = () => {
+    setMealPlan(null);
+    setCurrentStep(0);
+  };
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-slate-800">Votre régime alimentaire</h2>
+              <p className="text-slate-500 mt-2">Sélectionnez le régime qui vous correspond</p>
+            </div>
+            <DietSelector
+              value={preferences.diet_type}
+              customDiet={preferences.custom_diet}
+              onChange={(v) => updatePreference('diet_type', v)}
+              onCustomDietChange={(v) => updatePreference('custom_diet', v)}
+            />
+          </div>
+        );
+      
+      case 1:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-slate-800">Vos allergies</h2>
+              <p className="text-slate-500 mt-2">Indiquez les aliments à éviter</p>
+            </div>
+            <AllergiesSelector
+              allergies={preferences.allergies}
+              onChange={(v) => updatePreference('allergies', v)}
+            />
+          </div>
+        );
+      
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-slate-800">Quels repas planifier ?</h2>
+              <p className="text-slate-500 mt-2">Choisissez les repas de votre semaine</p>
+            </div>
+            <MealsSelector
+              selected={preferences.meals_to_plan}
+              onChange={(v) => updatePreference('meals_to_plan', v)}
+            />
+          </div>
+        );
+      
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-slate-800">Votre budget</h2>
+              <p className="text-slate-500 mt-2">Définissez votre budget hebdomadaire</p>
+            </div>
+            
+            <div className="mb-6">
+              <Label className="text-slate-700 mb-2 block">Nombre de personnes</Label>
+              <div className="flex items-center gap-4">
+                <Users className="w-5 h-5 text-slate-400" />
+                <Input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={preferences.people_count}
+                  onChange={(e) => updatePreference('people_count', parseInt(e.target.value) || 1)}
+                  className="w-24"
+                />
+                <span className="text-slate-500">personne(s)</span>
+              </div>
+            </div>
+            
+            <BudgetSelector
+              value={preferences.budget_level}
+              onChange={(v) => updatePreference('budget_level', v)}
+            />
+          </div>
+        );
+      
+      case 4:
+        if (!mealPlan) return null;
+        
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-slate-800">Votre plan de repas</h2>
+              <p className="text-slate-500 mt-2">Semaine personnalisée selon vos préférences</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {mealPlan.meals?.map((dayMeal, index) => (
+                <MealCard
+                  key={dayMeal.day || index}
+                  day={dayMeal.day || DAYS[index]}
+                  meals={dayMeal}
+                  mealsToShow={preferences.meals_to_plan}
+                />
+              ))}
+            </div>
+            
+            <ShoppingList
+              items={mealPlan.shopping_list || []}
+              totalPrice={mealPlan.total_estimated_price}
+            />
+            
+            <div className="flex justify-center gap-4 pt-4">
+              <Button 
+                onClick={resetPlan}
+                variant="outline"
+                className="gap-2"
+                size="lg"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Retour au début
+              </Button>
+              
+              <Button 
+                onClick={resetPlan}
+                className="gap-2 bg-gradient-to-r from-sage-500 to-sage-600 hover:from-sage-600 hover:to-sage-700"
+                size="lg"
+              >
+                <Sparkles className="w-4 h-4" />
+                Générer un nouveau plan
+              </Button>
+            </div>
+          </div>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sage-50">
+      {/* Header */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-slate-100">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-sage-500 to-sage-600 rounded-xl">
+              <ChefHat className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="font-bold text-slate-800">MealPlanner</h1>
+              <p className="text-xs text-slate-400">IA Nutritionniste</p>
+            </div>
+          </div>
+          
+          {currentStep < 4 && (
+            <StepIndicator steps={STEPS.slice(0, 4)} currentStep={currentStep} />
+          )}
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        {isGenerating ? (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center min-h-[60vh] gap-6"
+          >
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-sage-400 to-sage-600 flex items-center justify-center">
+                <ChefHat className="w-10 h-10 text-white" />
+              </div>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 rounded-full border-4 border-transparent border-t-sage-300"
+              />
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-slate-700">Génération en cours...</h3>
+              <p className="text-slate-500 mt-2">Notre IA prépare votre plan de repas personnalisé</p>
+            </div>
+            <Loader2 className="w-6 h-6 text-sage-500 animate-spin" />
+          </motion.div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card className="p-6 md:p-8 shadow-xl shadow-slate-200/50 border-0">
+                {renderStep()}
+              </Card>
+            </motion.div>
+          </AnimatePresence>
+        )}
+
+        {/* Navigation Buttons */}
+        {!isGenerating && currentStep < 4 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-between mt-8 gap-4"
+          >
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStep === 0}
+              className="gap-2 px-8 h-14 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+              size="lg"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Retour
+            </Button>
+            
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className="gap-2 bg-gradient-to-r from-sage-500 to-sage-600 hover:from-sage-600 hover:to-sage-700 text-white px-12 h-14 text-base font-bold shadow-2xl hover:shadow-lg hover:scale-105 transition-all"
+              size="lg"
+            >
+              {currentStep === 3 ? (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  Générer mon plan
+                </>
+              ) : (
+                <>
+                  Continuer
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </Button>
+          </motion.div>
+        )}
+      </main>
+    </div>
+  );
+}
