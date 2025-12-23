@@ -1,0 +1,69 @@
+/* ===== Allergies Selector ===== */
+
+.allergy-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.badge-outline {
+  background: #ffffff;
+  color: #475569;
+}
+
+.badge-outline:hover {
+  background: #f1f5f9;
+}
+
+.badge-selected {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.badge-selected:hover {
+  background: #fecaca;
+}
+
+.badge-x {
+  font-weight: bold;
+}
+
+.allergy-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.allergy-input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.add-btn {
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
