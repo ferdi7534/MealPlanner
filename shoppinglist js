@@ -1,0 +1,102 @@
+const CATEGORY_ICONS = {
+  "Fruits & Légumes": "🍎",
+  "Viandes & Poissons": "🥩",
+  "Produits laitiers": "🥛",
+  "Féculents & Céréales": "🌾",
+  "Épicerie": "📦",
+  "Autre": "🛒"
+};
+
+const CATEGORY_COLORS = {
+  "Fruits & Légumes": "#dcfce7",
+  "Viandes & Poissons": "#fee2e2",
+  "Produits laitiers": "#e0f2fe",
+  "Féculents & Céréales": "#fef3c7",
+  "Épicerie": "#ede9fe",
+  "Autre": "#f1f5f9"
+};
+
+let checkedItems = {};
+
+function renderShoppingList(items, totalPrice) {
+  const container = document.getElementById("shopping-list");
+  checkedItems = {};
+
+  // Regroupement par catégorie
+  const grouped = {};
+  items.forEach(item => {
+    const cat = item.category || "Autre";
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  });
+
+  let checkedCount = 0;
+
+  let html = `
+    <div class="shopping-header">
+      <div class="shopping-title">🛒 Liste de courses</div>
+      <div class="shopping-badge">
+        <span id="checked-count">0</span> / ${items.length} articles
+      </div>
+    </div>
+  `;
+
+  Object.entries(grouped).forEach(([category, catItems]) => {
+    html += `
+      <div class="category-card">
+        <div class="category-header" style="background:${CATEGORY_COLORS[category] || CATEGORY_COLORS["Autre"]}">
+          ${CATEGORY_ICONS[category] || "🛒"} ${category}
+          <span class="category-count">${catItems.length}</span>
+        </div>
+        <div class="category-body">
+    `;
+
+    catItems.forEach(item => {
+      html += `
+        <div class="shopping-item" data-name="${item.item}">
+          <input type="checkbox" onchange="toggleShoppingItem('${item.item}')" />
+          <div>
+            <div class="shopping-name">${item.item}</div>
+            <div class="shopping-qty">${item.quantity}</div>
+          </div>
+          <div class="shopping-price">${item.estimated_price.toFixed(2)}€</div>
+        </div>
+      `;
+    });
+
+    html += `</div></div>`;
+  });
+
+  html += `
+    <div class="total-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span>Total estimé</span>
+        <span class="total-price">${totalPrice.toFixed(2)}€</span>
+      </div>
+      <p style="font-size:12px;opacity:0.8;margin-top:4px">
+        *Prix indicatifs basés sur les moyennes du marché
+      </p>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function toggleShoppingItem(name) {
+  checkedItems[name] = !checkedItems[name];
+
+  const itemEl = document.querySelector(`.shopping-item[data-name="${name}"]`);
+  const nameEl = itemEl.querySelector(".shopping-name");
+  const priceEl = itemEl.querySelector(".shopping-price");
+
+  itemEl.classList.toggle("checked", checkedItems[name]);
+  nameEl.classList.toggle("checked", checkedItems[name]);
+  priceEl.classList.toggle("checked", checkedItems[name]);
+
+  const count = Object.values(checkedItems).filter(Boolean).length;
+  document.getElementById("checked-count").textContent = count;
+}
+renderShoppingList(
+  mealPlan.shopping_list,
+  mealPlan.total_estimated_price
+);
