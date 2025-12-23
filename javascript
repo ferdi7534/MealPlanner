@@ -511,3 +511,118 @@ function toggleMeal(value) {
 }
 renderMealsSelector();
 console.log(selectedMeals);
+// ===== User Preferences (remplace ton schema JSON) =====
+
+let userPreferences = {
+  allergies: [],
+  diet_type: "standard",      // standard | halal | kasher | vegetarien | vegan | autre
+  custom_diet: "",
+  meals_to_plan: [],          // petit_dejeuner, dejeuner, diner
+  budget_level: "moyen",      // economique | moyen | confort
+  people_count: 1
+};
+userPreferences.diet_type = dietValue;
+userPreferences.custom_diet = customDietValue;
+userPreferences.allergies = selectedAllergies;
+userPreferences.meals_to_plan = selectedMeals;
+userPreferences.budget_level = "economique"; // ou moyen / confort
+userPreferences.budget_euros = budgetValue;
+userPreferences.people_count = peopleCount;
+// ===== Meal Plan (remplace ton schema JSON) =====
+
+let mealPlan = {
+  week_start: "",
+  meals: [],
+  shopping_list: [],
+  total_estimated_price: 0,
+  preferences_snapshot: {}
+};
+mealPlannerAPI(userPreferences) → mealPlan
+const MEAL_LIBRARY = {
+  standard: {
+    petit_dejeuner: ["Porridge fruits", "Tartines beurre", "Yaourt céréales"],
+    dejeuner: ["Poulet riz", "Pâtes bolognaise", "Steak légumes"],
+    diner: ["Poisson légumes", "Omelette salade", "Soupe + toast"]
+  },
+  vegetarien: {
+    petit_dejeuner: ["Porridge fruits", "Smoothie bowl", "Tartines confiture"],
+    dejeuner: ["Curry légumes", "Pâtes pesto", "Salade pois chiches"],
+    diner: ["Wok légumes", "Soupe lentilles", "Omelette fromage"]
+  },
+  vegan: {
+    petit_dejeuner: ["Porridge végétal", "Smoothie fruits", "Tartines houmous"],
+    dejeuner: ["Buddha bowl", "Curry pois chiches", "Riz légumes"],
+    diner: ["Soupe légumes", "Wok tofu", "Salade quinoa"]
+  }
+};
+const DAYS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+
+function mealPlannerAPI(preferences) {
+  const diet = preferences.diet_type || "standard";
+  const mealsToPlan = preferences.meals_to_plan;
+  const people = preferences.people_count || 1;
+  const budget = preferences.budget_euros || 50;
+
+  const source = MEAL_LIBRARY[diet] || MEAL_LIBRARY.standard;
+
+  let mealPlan = {
+    week_start: new Date().toISOString().split("T")[0],
+    meals: [],
+    shopping_list: [],
+    total_estimated_price: 0,
+    preferences_snapshot: { ...preferences }
+  };
+
+  DAYS.forEach(day => {
+    let dayMeals = { day };
+
+    mealsToPlan.forEach(type => {
+      const options = source[type];
+      dayMeals[type] = options[Math.floor(Math.random() * options.length)];
+    });
+
+    mealPlan.meals.push(dayMeals);
+  });
+
+  generateShoppingList(mealPlan, people, budget);
+  return mealPlan;
+}
+function generateShoppingList(mealPlan, people, budget) {
+  const baseList = [
+    { item: "Légumes variés", category: "Fruits & Légumes", price: 3 },
+    { item: "Féculents", category: "Féculents & Céréales", price: 2 },
+    { item: "Protéines", category: "Viandes & Poissons", price: 4 },
+    { item: "Produits laitiers / équivalent", category: "Produits laitiers", price: 2 }
+  ];
+
+  let total = 0;
+
+  mealPlan.shopping_list = baseList.map(b => {
+    const estimated = b.price * people;
+    total += estimated;
+
+    return {
+      item: b.item,
+      quantity: `${people * 500} g`,
+      category: b.category,
+      estimated_price: estimated
+    };
+  });
+
+  // Ajustement simple selon budget
+  if (budget < 30) total *= 0.85;
+  if (budget > 70) total *= 1.15;
+
+  mealPlan.total_estimated_price = Math.round(total * 100) / 100;
+}
+mealPlan = mealPlannerAPI(userPreferences);
+
+// Affichage
+renderMealCards(mealPlan.meals);
+renderShoppingList(
+  mealPlan.shopping_list,
+  mealPlan.total_estimated_price
+);
+
+// Sauvegarde optionnelle
+localStorage.setItem("mealPlan", JSON.stringify(mealPlan));
