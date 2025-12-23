@@ -1,0 +1,128 @@
+const MEAL_ICONS = {
+  petit_dejeuner: "☕",
+  dejeuner: "☀️",
+  diner: "🌙"
+};
+
+const MEAL_LABELS = {
+  petit_dejeuner: "Petit-déj",
+  dejeuner: "Déjeuner",
+  diner: "Dîner"
+};
+
+function getGIClass(gi) {
+  if (gi <= 55) return "badge-gi-low";
+  if (gi <= 69) return "badge-gi-mid";
+  return "badge-gi-high";
+}
+
+function getGILabel(gi) {
+  if (gi <= 55) return "IG Bas";
+  if (gi <= 69) return "IG Moyen";
+  return "IG Élevé";
+}
+
+function createMealCard(day, meals, mealsToShow) {
+  let html = `
+    <div class="meal-card">
+      <div class="meal-card-header">${day}</div>
+      <div class="meal-card-body">
+  `;
+
+  mealsToShow.forEach(type => {
+    const meal = meals[type];
+    if (!meal) return;
+
+    const name = typeof meal === "string" ? meal : meal.name;
+    const calories = meal.calories_per_100g;
+    const gi = meal.glycemic_index;
+
+    html += `
+      <div class="meal-row">
+        <div class="meal-icon">${MEAL_ICONS[type]}</div>
+        <div>
+          <div class="meal-label">${MEAL_LABELS[type]}</div>
+          <div class="meal-name">${name}</div>
+    `;
+
+    if (calories || gi) {
+      html += `<div class="badges">`;
+      if (calories) {
+        html += `<div class="badge badge-cal">🔥 ${calories} kcal</div>`;
+      }
+      if (gi) {
+        html += `<div class="badge ${getGIClass(gi)}">⚡ ${getGILabel(gi)} (${gi})</div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `</div></div>`;
+  });
+
+  html += `</div></div>`;
+  return html;
+}
+const MEAL_ICONS = {
+  petit_dejeuner: "☕",
+  dejeuner: "☀️",
+  diner: "🌙"
+};
+
+const MEAL_LABELS = {
+  petit_dejeuner: "Petit-déj",
+  dejeuner: "Déjeuner",
+  diner: "Dîner"
+};
+
+function getGIClass(gi) {
+  if (gi <= 55) return "badge-gi-low";
+  if (gi <= 69) return "badge-gi-mid";
+  return "badge-gi-high";
+}
+
+function getGILabel(gi) {
+  if (gi <= 55) return "IG Bas";
+  if (gi <= 69) return "IG Moyen";
+  return "IG Élevé";
+}
+
+function createMealCard(day, meals, mealsToShow) {
+  let html = `
+    <div class="meal-card">
+      <div class="meal-card-header">${day}</div>
+      <div class="meal-card-body">
+  `;
+
+  mealsToShow.forEach(type => {
+    const meal = meals[type];
+    if (!meal) return;
+
+    const name = typeof meal === "string" ? meal : meal.name;
+    const calories = meal.calories_per_100g;
+    const gi = meal.glycemic_index;
+
+    html += `
+      <div class="meal-row">
+        <div class="meal-icon">${MEAL_ICONS[type]}</div>
+        <div>
+          <div class="meal-label">${MEAL_LABELS[type]}</div>
+          <div class="meal-name">${name}</div>
+    `;
+
+    if (calories || gi) {
+      html += `<div class="badges">`;
+      if (calories) {
+        html += `<div class="badge badge-cal">🔥 ${calories} kcal</div>`;
+      }
+      if (gi) {
+        html += `<div class="badge ${getGIClass(gi)}">⚡ ${getGILabel(gi)} (${gi})</div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `</div></div>`;
+  });
+
+  html += `</div></div>`;
+  return html;
+}
