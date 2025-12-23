@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>MealPlanner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>🍽 MealPlanner</h1>
+  <p>Planificateur de repas hebdomadaire</p>
+</header>
+
+<main id="app">
+
+  <!-- Étape 1 -->
+  <section class="step active">
+    <h2>Régime alimentaire</h2>
+    <select id="diet">
+      <option value="standard">Standard</option>
+      <option value="vegetarien">Végétarien</option>
+    </select>
+    <button onclick="nextStep()">Continuer</button>
+  </section>
+
+  <!-- Étape 2 -->
+  <section class="step">
+    <h2>Nombre de personnes</h2>
+    <input type="number" id="people" min="1" value="2">
+    <button onclick="prevStep()">Retour</button>
+    <button onclick="nextStep()">Continuer</button>
+  </section>
+
+  <!-- Étape 3 -->
+  <section class="step">
+    <h2>Budget par personne (€)</h2>
+    <input type="number" id="budget" value="50">
+    <button onclick="prevStep()">Retour</button>
+    <button onclick="generatePlan()">Générer</button>
+  </section>
+
+  <!-- Résultat -->
+  <section class="step">
+    <h2>Votre semaine</h2>
+    <div id="result"></div>
+    <button onclick="resetApp()">Recommencer</button>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Access Restricted</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="error-page">
+
+  <div class="error-container">
+    <div class="error-card">
+
+      <div class="icon-circle">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+
+      <h1>Access Restricted</h1>
+      <p class="subtitle">
+        You are not registered to use this application. Please contact the app administrator to request access.
+      </p>
+
+      <div class="info-box">
+        <p><strong>If you believe this is an error, you can:</strong></p>
+        <ul>
+          <li>Verify you are logged in with the correct account</li>
+          <li>Contact the app administrator for access</li>
+          <li>Try logging out and back in again</li>
+        </ul>
+      </div>
+
+      <a href="index.html" class="back-btn">← Back to home</a>
+
+    </div>
+  </div>
+
+</body>
+</html>
+<div id="step-indicator" class="step-indicator"></div>
+<div id="meal-cards" class="meal-grid"></div>
+<div id="shopping-list"></div>
+<div id="allergies-selector"></div>
+<div id="budget-selector"></div>
+<div id="budget-selector"></div>
+<div id="meals-selector"></div>
