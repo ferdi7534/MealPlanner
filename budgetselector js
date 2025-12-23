@@ -1,0 +1,59 @@
+let budgetValue = 50;
+
+function renderBudgetSelector() {
+  const container = document.getElementById("budget-selector");
+
+  container.innerHTML = `
+    <div class="budget-container">
+      <div class="budget-label">
+        Budget hebdomadaire par personne
+      </div>
+
+      <div class="budget-input-wrapper">
+        <div class="budget-icon">💼</div>
+        <input
+          id="budget-input"
+          class="budget-input"
+          type="number"
+          min="10"
+          max="500"
+          step="5"
+          value="${budgetValue}"
+        />
+        <div class="budget-euro">€</div>
+      </div>
+
+      <div class="budget-help">
+        Entrez votre budget souhaité pour la semaine
+      </div>
+
+      <div class="budget-presets">
+        <button class="budget-btn budget-eco" onclick="setBudget(25)">
+          <small>Économique</small>
+          <strong>25€</strong>
+        </button>
+        <button class="budget-btn budget-mid" onclick="setBudget(50)">
+          <small>Moyen</small>
+          <strong>50€</strong>
+        </button>
+        <button class="budget-btn budget-comfort" onclick="setBudget(80)">
+          <small>Confort</small>
+          <strong>80€</strong>
+        </button>
+      </div>
+    </div>
+  `;
+
+  document
+    .getElementById("budget-input")
+    .addEventListener("input", e => {
+      budgetValue = parseFloat(e.target.value) || 0;
+    });
+}
+
+function setBudget(value) {
+  budgetValue = value;
+  document.getElementById("budget-input").value = value;
+}
+renderBudgetSelector();
+console.log(budgetValue);
