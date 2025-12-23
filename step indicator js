@@ -1,0 +1,35 @@
+const steps = ["Régime", "Allergies", "Repas", "Budget"];
+let currentStep = 0;
+
+function renderStepIndicator() {
+  const container = document.getElementById("step-indicator");
+  container.innerHTML = "";
+
+  steps.forEach((step, index) => {
+    const circle = document.createElement("div");
+    circle.classList.add("step-circle");
+
+    if (index < currentStep) {
+      circle.classList.add("step-completed");
+      circle.textContent = "✔";
+    } else if (index === currentStep) {
+      circle.classList.add("step-current");
+      circle.textContent = index + 1;
+    } else {
+      circle.classList.add("step-upcoming");
+      circle.textContent = index + 1;
+    }
+
+    container.appendChild(circle);
+
+    if (index < steps.length - 1) {
+      const line = document.createElement("div");
+      line.classList.add(
+        "step-line",
+        index < currentStep ? "step-line-active" : ""
+      );
+      container.appendChild(line);
+    }
+  });
+}
+renderStepIndicator();
