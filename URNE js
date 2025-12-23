@@ -1,5 +1,0 @@
-const isUserAllowed = false;
-
-if (!isUserAllowed) {
-  window.location.href = "not-registered.html";
-}
